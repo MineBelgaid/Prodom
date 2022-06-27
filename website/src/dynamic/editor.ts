@@ -1,28 +1,37 @@
 import { buildStore as buildIt, inferType, Prototype } from 'prodom'
 import './editor.css'
 import { devIcon } from './icons'
+import jsSHA from 'jssha'
 export interface EditorProps {
   demo: string
   title: string
+  hash: string
 }
 
 const Editor = (
-  { demo, title }: EditorProps,
+  { demo, title, hash }: EditorProps,
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  { onDemoChange, setTitle }: EditorActions,
+  { onDemoChange, setTitle, setHash, setHashFile }: EditorActions,
   demoProp: string,
   titleProp: string,
   link: string,
   devMode: boolean,
   dark: boolean,
+  hashProp: string,
 ) => {
   const resolvedDemo = demo !== undefined ? demo : demoProp
   const resolvedTitle = title !== undefined ? title : titleProp
-  const buildStore = buildIt
+  const resolvedhash = hash !== undefined ? title : hashProp
   const titleDOM = {
     tag: 'div',
     className: ['title', devMode && 'dev', dark && 'dark'],
     innerText: resolvedTitle,
+    contentEditable: devMode,
+  }
+  const hashDOM = {
+    tag: 'div',
+    className: ['hash', devMode && 'dev', dark && 'dark'],
+    innerText: resolvedhash,
     contentEditable: devMode,
   }
 
@@ -73,22 +82,50 @@ const Editor = (
   return {
     tag: 'div',
     className: ['editor-container', devMode && 'dev', dark && 'dark'],
-    children: [headerDOM, demoContainerDOM],
+    children: [headerDOM, demoContainerDOM, hashDOM],
     contentEditable: devMode,
   }
 }
 
+const calculate_sha512_for_file = function (file, mail) {
+  const reader = new FileReader()
+  return new Promise((resolve, reject) => {
+    reader.onerror = function (e) {
+      alert(e)
+      reject(new DOMException('Problem parsing input file.'))
+    }
+    reader.onload = function () {
+      const date = new Date()
+      const shaObj = new jsSHA('SHA3-512', 'TEXT')
+      shaObj.update(mail + date.toString() + date.toISOString() + reader.result)
+      const hash = shaObj.getHash('HEX')
+      resolve(hash)
+    }
+    reader.readAsBinaryString(file)
+  })
+}
 type EditorActions = {
   onDemoChange: (demo: string) => void
   setTitle: (title: string) => void
+  setHash: (str: string) => void
+  setHashFile: (file: any, mail: string) => void
 }
-
 const actions = (state: EditorProps): EditorActions => ({
   onDemoChange: (demo: string) => {
     state.demo = demo
   },
   setTitle: (title: string) => {
     state.title = title
+  },
+  setHash: (str: string) => {
+    const sha512 = new jsSHA('SHA3-512', 'TEXT')
+    sha512.update(str)
+    state.title = 'y4e'
+  },
+  setHashFile: async (file: any, mail: string) => {
+    await calculate_sha512_for_file(file, mail).then((hash) => {
+      state.title = 'SHA3-512 for this file is: ' + (hash as string)
+    })
   },
 })
 

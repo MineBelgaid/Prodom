@@ -2,7 +2,7 @@ import { buildStore as buildIt, Prototype, render } from 'prodom'
 import './blog.article.css'
 import Editor from './editor'
 import { darkIcon, devIcon } from './icons'
-import icon from '../icon-trans.png'
+import jsSHA from 'jssha'
 export interface BlogArticleProps {
   title: string
   subtitle: string
@@ -88,84 +88,18 @@ const createBlogArticle = (
     children: [devModeDOM, darkModeDOM],
   }
 
-  const style1 = (devMode: boolean) => ({
-    backgroundColor: devMode && 'gray',
-  })
-
-  const style2 = {
-    fontSize: '3rem',
-  }
-
-  const titleDOM = {
-    tag: 'h1',
-    className: ['blog-article-title', devMode && 'dev', dark && 'dark'],
-    style: { ...style1(devMode), ...(devMode && style2) },
-    innerText: title,
-    contentEditable: devMode,
-  }
-
-  const subtitleDOM = {
-    tag: 'p',
-    className: ['blog-article-subtitle', devMode && 'dev', dark && 'dark'],
-    innerText: subtitle,
-    contentEditable: devMode,
-  }
-
-  const linkDOM = {
-    tag: 'a',
-    className: ['blog-article-link', devMode && 'dev', dark && 'dark'],
-    innerText: link,
-    href: link,
-    contentEditable: devMode,
-  }
-
-  const dateDOM = {
-    tag: 'p',
-    className: ['blog-article-date', devMode && 'dev', dark && 'dark'],
-    innerHTML: date,
-    contentEditable: devMode,
-  }
-
-  const bodyDOM: Prototype<HTMLParagraphElement> = {
-    tag: 'p',
-    className: ['blog-article-body', devMode && 'dev', dark && 'dark'],
-    innerHTML: body,
-    contentEditable: '' + devMode,
-  }
-
-  const exampleTitle = {
-    tag: 'h2',
-    innerText: 'Some examples',
-    style: {
-      marginBottom: '50px',
-    },
-  }
-
-  const buildStore = buildIt
   const container = {
     tag: 'div',
     className: ['blog-article-container', devMode && 'dev', dark && 'dark'],
     children: [
-      titleDOM,
-      subtitleDOM,
-      linkDOM,
-      dateDOM,
-      {
-        tag: 'img',
-        src: icon,
-        style: {
-          display: 'inline-block',
-          alignSelf: 'center',
-          width: '96px',
-          height: '96px',
-        },
-      },
-      bodyDOM,
-      exampleTitle,
       Editor(
         `{
-    tag: 'code',
-    innerText: 'Hello world',
+  	tag: 'input',
+	type: 'file',
+	onchange: (e) => {
+		const file = e.target.files[0]
+		setHashFile(file)
+	}
 }`,
         'A simple prototype',
         'https://codepen.io/m3ftah/pen/PopdwaG',
@@ -175,84 +109,57 @@ const createBlogArticle = (
       Editor(
         `{
   tag: 'div',
+  className: ['form'],
   children:
   [
     {
-      tag: 'label',
-      innerText: 'First child: ',
+      tag: 'input',
+      id: ['email-input'],
+      type: 'email',
+      value: 'Email',
+    },
+    {
+      tag:"br",
     },
     {
       tag: 'input',
-      value: 'Second child',
+      type: 'file',
+      className: ['fileinput'],
+      id: 'file',
+    },
+    {
+      tag:"br",
     },
     {
       tag: 'button',
-      innerText: 'Third child',
+      type: 'submit',
+      innerText: 'submit',
+      onclick: () => {
+        const fileInput = document.getElementById('file');
+        const selectedFile = fileInput.files[0];
+				const emailinput = document.getElementById('email-input');
+				const email = emailinput.value;
+        setHashFile(selectedFile,email)
+      }
     },
   ]
 }`,
-        'Composing prototypes',
-        'https://codepen.io/m3ftah/pen/ZEeexea',
+        'Adding the preamble',
+        'https://codepen.io/m3ftah/pen/PopdwaG',
         devMode,
         dark,
       ),
       Editor(
         `{
-  tag: 'code',
-  innerText: 'Hello world',
-  className: ['bold', dark && 'dark']
+  	tag: 'button',
+		innerText: 'Click mee',
+		onclick: () => { 
+			console.log('clicked')
+			setHash('Hello worldd')
+			},
 }`,
-        'Dynamic CSS Classes',
-        'https://codepen.io/m3ftah/pen/YzZOPez',
-        devMode,
-        dark,
-      ),
-      Editor(
-        `{
-  tag: 'button',
-  innerText: 'Click me!',
-  onclick: ()=> setTitle('Title has been modified')
-}`,
-        'Events',
-        'https://codepen.io/m3ftah/pen/RwpBXzG',
-        devMode,
-        dark,
-      ),
-      Editor(
-        `{
-  tag: 'div',
-  innerText: 'I am styled',
-  style: {display: 'flex' , alignSelf: ' center', padding: '16px', borderRadius: '8px', backgroundColor: '#29f'}
-}`,
-        'Styling',
-        'https://codepen.io/m3ftah/pen/jOBvEmw',
-        devMode,
-        dark,
-      ),
-      Editor(
-        `() => {
-        const prototype = ({ name }, { setName }) => ({
-          tag: 'div',
-          children: [
-            {
-              tag: 'input',
-              value: name,
-              oninput: (e) => setName(e.target.value)
-            },
-            {
-              tag: 'div',
-              innerText: 'Name: ' + name,
-              onclick: () => setName('User 1')
-            }
-          ]
-        })
-        const actions = (state) => ({
-          setName: (name) => state.name = name
-        })
-        return buildStore(prototype, actions, { name: 'NAME' })(resolvedDemo)
-      }`,
-        'Store',
-        'https://codepen.io/m3ftah/pen/NWpLKdz',
+        'A simple prototype',
+        'https://codepen.io/m3ftah/pen/PopdwaG',
         devMode,
         dark,
       ),
@@ -291,4 +198,5 @@ const actions = (state: BlogArticleProps): BlogActions => ({
     state.devMode = devMode
   },
 })
+
 export default render(buildIt(createBlogArticle, actions, article)(), {})
