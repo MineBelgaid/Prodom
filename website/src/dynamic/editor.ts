@@ -11,7 +11,13 @@ export interface EditorProps {
 const Editor = (
   { demo, title, hash }: EditorProps,
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  { onDemoChange, setTitle, setHash, setHashFile }: EditorActions,
+  {
+    onDemoChange,
+    setTitle,
+    setHash,
+    setHashFile,
+    checkIntegrity,
+  }: EditorActions,
   demoProp: string,
   titleProp: string,
   link: string,
@@ -87,17 +93,24 @@ const Editor = (
   }
 }
 
-const calculate_sha512_for_file = function (file, mail) {
+const calculate_sha512_for_file = function (file, mail, email = false) {
   const reader = new FileReader()
+
   return new Promise((resolve, reject) => {
     reader.onerror = function (e) {
       alert(e)
       reject(new DOMException('Problem parsing input file.'))
     }
     reader.onload = function () {
-      const date = new Date()
       const shaObj = new jsSHA('SHA3-512', 'TEXT')
-      shaObj.update(mail + date.toString() + date.toISOString() + reader.result)
+      if (email) {
+        const date = new Date()
+        shaObj.update(
+          mail + date.toString() + date.toISOString() + reader.result,
+        )
+      } else {
+        shaObj.update(reader.result)
+      }
       const hash = shaObj.getHash('HEX')
       resolve(hash)
     }
@@ -109,6 +122,7 @@ type EditorActions = {
   setTitle: (title: string) => void
   setHash: (str: string) => void
   setHashFile: (file: any, mail: string) => void
+  checkIntegrity: (file: any, hash: string) => void
 }
 const actions = (state: EditorProps): EditorActions => ({
   onDemoChange: (demo: string) => {
@@ -123,8 +137,19 @@ const actions = (state: EditorProps): EditorActions => ({
     state.title = 'y4e'
   },
   setHashFile: async (file: any, mail: string) => {
-    await calculate_sha512_for_file(file, mail).then((hash) => {
+    await calculate_sha512_for_file(file, mail, true).then((hash) => {
       state.title = 'SHA3-512 for this file is: ' + (hash as string)
+    })
+  },
+  checkIntegrity: async (file: any, hash: string) => {
+    await calculate_sha512_for_file(file, hash).then((result) => {
+      if (hash === (result as string)) {
+        console.log('file is ok')
+        state.title = 'File is ok '
+      } else {
+        console.log('file is not ok')
+        state.title = 'File is not ok '
+      }
     })
   },
 })

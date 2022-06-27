@@ -125,7 +125,7 @@ const createBlogArticle = (
       tag: 'input',
       type: 'file',
       className: ['fileinput'],
-      id: 'file',
+      id: 'file1',
     },
     {
       tag:"br",
@@ -135,7 +135,7 @@ const createBlogArticle = (
       type: 'submit',
       innerText: 'submit',
       onclick: () => {
-        const fileInput = document.getElementById('file');
+        const fileInput = document.getElementById('file1');
         const selectedFile = fileInput.files[0];
 				const emailinput = document.getElementById('email-input');
 				const email = emailinput.value;
@@ -151,14 +151,43 @@ const createBlogArticle = (
       ),
       Editor(
         `{
-  	tag: 'button',
-		innerText: 'Click mee',
-		onclick: () => { 
-			console.log('clicked')
-			setHash('Hello worldd')
-			},
+  tag: 'div',
+  className: ['form'],
+  children:
+  [
+    {
+      tag: 'input',
+      id: ['hash-input'],
+      type: 'text',
+      value: 'Enter your hash',
+    },
+    {
+      tag:"br",
+    },
+    {
+      tag: 'input',
+      type: 'file',
+      className: ['fileinput'],
+      id: 'file2',
+    },
+    {
+      tag:"br",
+    },
+    {
+      tag: 'button',
+      type: 'submit',
+      innerText: 'submit',
+      onclick: () => {
+        const fileInput = document.getElementById('file2');
+        const selectedFile = fileInput.files[0];
+        const hashinput = document.getElementById('hash-input');
+        const hash = hashinput.value;
+        checkIntegrity(selectedFile,hash)
+      }
+    },
+  ]
 }`,
-        'A simple prototype',
+        'Checking integrity',
         'https://codepen.io/m3ftah/pen/PopdwaG',
         devMode,
         dark,
