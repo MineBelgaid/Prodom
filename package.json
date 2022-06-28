@@ -7,7 +7,7 @@
         "*.css"
     ],
     "scripts": {
-        "heroku-prebuild": "webpack --config webpack.config.js",
+        "heroku-prebuild": "npm install --dev",
         "start": "npm run build && webpack-serve --host=0.0.0.0 --port=$PORT --omit=dev",
         "build": "webpack --env production",
         "lint": "eslint . --ext .ts",
@@ -52,8 +52,5 @@
     },
     "browser": {
         "crypto": false
-    },
-    "engines": {
-        "node": "16.13"
     }
 }
