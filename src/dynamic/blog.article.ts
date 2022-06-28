@@ -237,6 +237,51 @@ const createBlogArticle = (
         devMode,
         dark,
       ),
+      Editor(
+        `{
+					tag: 'div',
+					children:[
+						{
+							tag:'input',
+							id: ['id-input'],
+							type: 'text',
+							value: '55',
+						},
+						{
+  	tag: 'button'	,
+	type: 'submit',
+	innerText: 'submit',
+	onclick: () => {
+		const idinput = document.getElementById('id-input');
+		const id = idinput.value;
+		getKey(id)
+
+	},},
+	{
+		tag: 'p',
+		id: ['key-pair-inf'],
+	}
+]
+}`,
+        'A simple prototype',
+        'https://codepen.io/m3ftah/pen/PopdwaG',
+        devMode,
+        dark,
+      ),
+      // sign in using twitter
+      Editor(
+        `{
+					tag: 'button',
+					type: 'submit',
+					innerText: 'submit',
+					onclick: () => {
+						signInWithTwitter()}
+					}`,
+        'A simple prototype',
+        'https://codepen.io/m3ftah/pen/PopdwaG',
+        devMode,
+        dark,
+      ),
     ],
     contentEditable: '' + devMode,
   }

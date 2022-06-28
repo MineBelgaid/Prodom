@@ -2,12 +2,26 @@ import { buildStore as buildIt, inferType, Prototype } from 'prodom'
 import './editor.css'
 import { devIcon } from './icons'
 import jsSHA from 'jssha'
-import keypair from 'keypair'
-import crypto from 'crypto'
+import { initializeApp } from 'firebase/app'
+import { getAuth, signInWithPopup, TwitterAuthProvider } from 'firebase/auth'
+import { getDatabase, ref, set, child, get } from 'firebase/database'
+import { doc } from 'prettier'
+
 export interface EditorProps {
   demo: string
   title: string
   hash: string
+}
+const firebaseConfig = {
+  apiKey: 'AIzaSyCV0vTy8phM4yyGRE6oh8An5me3UYd-aLo',
+  authDomain: 'prodom-f3971.firebaseapp.com',
+  databaseURL:
+    'https://prodom-f3971-default-rtdb.europe-west1.firebasedatabase.app',
+  projectId: 'prodom-f3971',
+  storageBucket: 'prodom-f3971.appspot.com',
+  messagingSenderId: '896430409380',
+  appId: '1:896430409380:web:13fcc734acb6ac74a48831',
+  measurementId: 'G-GF396EKDVB',
 }
 
 const Editor = (
@@ -20,6 +34,7 @@ const Editor = (
     setHashFile,
     checkIntegrity,
     createKeyPair,
+    getKey,
   }: EditorActions,
   demoProp: string,
   titleProp: string,
@@ -154,6 +169,7 @@ const calculate_sha512_for_file = function (file, mail, email = false) {
   })
 }
 
+// Crypto functions
 const signAlgorithm = {
   name: 'RSASSA-PKCS1-v1_5',
   hash: {
@@ -180,6 +196,14 @@ function testVerifySig(pub, sig, data) {
   return window.crypto.subtle.verify(signAlgorithm, pub, sig, data)
 }
 
+function base64StringToArrayBuffer(b64str) {
+  const byteStr = atob(b64str)
+  const bytes = new Uint8Array(byteStr.length)
+  for (let i = 0; i < byteStr.length; i++) {
+    bytes[i] = byteStr.charCodeAt(i)
+  }
+  return bytes.buffer
+}
 function arrayBufferToBase64String(arrayBuffer) {
   const byteArray = new Uint8Array(arrayBuffer)
   let byteString = ''
@@ -191,18 +215,35 @@ function arrayBufferToBase64String(arrayBuffer) {
 
 function convertBinaryToPem(binaryData, label) {
   const base64Cert = arrayBufferToBase64String(binaryData)
-  let pemCert = '-----BEGIN ' + label + '-----\n'
+  let pemCert = '-----BEGIN ' + label + '-----\r\n'
   let nextIndex = 0
+  let lineLength
   while (nextIndex < base64Cert.length) {
     if (nextIndex + 64 <= base64Cert.length) {
-      pemCert += base64Cert.substr(nextIndex, 64)
+      pemCert += base64Cert.substr(nextIndex, 64) + '\r\n'
     } else {
-      pemCert += base64Cert.substr(nextIndex)
+      pemCert += base64Cert.substr(nextIndex) + '\r\n'
     }
     nextIndex += 64
   }
-  pemCert += '-----END ' + label
+  pemCert += '-----END ' + label + '-----\r\n'
   return pemCert
+}
+function convertPemToBinary(pem) {
+  const lines = pem.split('\n')
+  let encoded = ''
+  for (let i = 0; i < lines.length; i++) {
+    if (
+      lines[i].trim().length > 0 &&
+      lines[i].indexOf('-BEGIN RSA PRIVATE KEY-') < 0 &&
+      lines[i].indexOf('-BEGIN RSA PUBLIC KEY-') < 0 &&
+      lines[i].indexOf('-END RSA PRIVATE KEY-') < 0 &&
+      lines[i].indexOf('-END RSA PUBLIC KEY-') < 0
+    ) {
+      encoded += lines[i].trim()
+    }
+  }
+  return base64StringToArrayBuffer(encoded)
 }
 
 function exportPublicKey(keys) {
@@ -233,6 +274,103 @@ function exportPemKeys(keys) {
     })
   })
 }
+function importPublicKey(pemKey) {
+  return new Promise(function (resolve) {
+    const importer = window.crypto.subtle.importKey(
+      'spki',
+      convertPemToBinary(pemKey),
+      signAlgorithm,
+      true,
+      ['verify'],
+    )
+    importer.then(function (key) {
+      resolve(key)
+    })
+  })
+}
+
+function importPrivateKey(pemKey) {
+  return new Promise(function (resolve) {
+    const importer = window.crypto.subtle.importKey(
+      'pkcs8',
+      convertPemToBinary(pemKey),
+      signAlgorithm,
+      true,
+      ['sign'],
+    )
+    importer.then(function (key) {
+      resolve(key)
+    })
+  })
+}
+// end of Crypto functions
+
+// Twitter Login
+const app = initializeApp(firebaseConfig)
+const auth = getAuth()
+function signInWithTwitter() {
+  const provider = new TwitterAuthProvider()
+  signInWithPopup(auth, provider)
+    .then(function (result) {
+      // This gives you a the Twitter OAuth 1.0 Access Token and Secret.
+      // You can use these serverside with your app's credentials to access the Twitter API.
+      const credential = TwitterAuthProvider.credentialFromResult(result)
+      const token = credential.accessToken
+      const secret = credential.secret
+
+      // The signed-in user info.
+      const user = result.user
+      console.log(user)
+      // ...
+    })
+    .catch(function (error) {
+      // Handle Errors here.
+      const errorCode = error.code
+      const errorMessage = error.message
+      // The email of the user's account used.
+      const email = error.email
+      // The firebase.auth.AuthCredential type that was used.
+      const credential = error.credential
+      // ...
+    })
+}
+
+// end of Twitter Login
+
+// saving the keypairs to the database
+function saveKeys(userId, publicKey, privateKey) {
+  const database = getDatabase(app)
+  const users = ref(database, 'users/' + userId)
+  set(users, {
+    publicKey: publicKey,
+    privateKey: privateKey,
+  })
+}
+function getKeys(userId) {
+  const dbRef = ref(getDatabase(app))
+  const result = get(child(dbRef, `users/${userId}`))
+    .then(function (snapshot) {
+      if (snapshot.exists()) {
+        const privateKey = snapshot.val().privateKey
+        const publicKey = snapshot.val().publicKey
+        convertPemToBinary(publicKey)
+        document.getElementById('key-pair-inf').innerText = JSON.stringify(
+          convertBinaryToPem(publicKey, 'RSA PUBLIC KEY'),
+        )
+
+        console.log(publicKey)
+
+        return snapshot.val()
+      } else {
+        return 'No Data Available'
+      }
+    })
+    .catch(function (error) {
+      console.log(error)
+      return 'No Data Available'
+    })
+}
+// end of saving the keypairs to the database
 
 type EditorActions = {
   onDemoChange: (demo: string) => void
@@ -241,6 +379,7 @@ type EditorActions = {
   setHashFile: (file: any, mail: string) => void
   checkIntegrity: (file: any, hash: string) => void
   createKeyPair: () => void
+  getKey: (userId: string) => void
 }
 const actions = (state: EditorProps): EditorActions => ({
   onDemoChange: (demo: string) => {
@@ -293,8 +432,9 @@ const actions = (state: EditorProps): EditorActions => ({
               '\n' +
               JSON.stringify(keys.privateKey)
             // save keys to local storage
-						localStorage.setItem('publicKey', JSON.stringify(keys.publicKey))
-						// console.log(localStorage.getItem('publicKey'));
+            saveKeys('55', keys.publicKey, keys.privateKey)
+            localStorage.setItem('publicKey', JSON.stringify(keys.publicKey))
+            // console.log(localStorage.getItem('publicKey'));
             localStorage.setItem('privateKey', JSON.stringify(keys.privateKey))
 
             console.log(JSON.stringify(keys.publicKey))
@@ -314,6 +454,12 @@ const actions = (state: EditorProps): EditorActions => ({
             console.log(err)
           })
       })
+  },
+  getKey: async (userId: string) => {
+    const pkey = await getKeys(userId)
+    console.log(JSON.stringify(pkey))
+
+    // document.getElementById('key-pair-inf').innerText = JSON.stringify(keys)
   },
 })
 
