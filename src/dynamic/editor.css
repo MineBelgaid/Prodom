@@ -97,6 +97,46 @@
     margin: 4px;
 }
 
+.demo-container .right-demo .form {
+    display: flex;
+    flex-direction: column;
+    align-items: space-evenly;
+    flex-basis: 600px;
+    align-self: stretch;
+    font-size: 1rem;
+    padding: 8px;
+    border-color: lightgrey;
+    border-width: 1px;
+    border-style: solid;
+    border-radius: 4px;
+    word-break: break-all;
+    overflow: hidden;
+    margin: 4px;
+}
+
+.demo-container .right-demo .fileinput {
+    cursor: pointer;
+}
+
+
+/* .demo-container .right-demo .fileinput+label {
+    font-size: 1.25em;
+    font-weight: 700;
+    color: white;
+    background-color: black;
+    display: inline-block;
+}
+
+.fileinput:focus+label,
+.fileinput+label:hover {
+    background-color: red;
+} */
+
+.fileinput+label {
+    cursor: pointer;
+    /* "hand" cursor */
+}
+
 @media only screen and (min-width: 600px) {
     .demo-container .left-demo {
         flex: 1;

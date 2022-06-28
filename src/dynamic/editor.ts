@@ -2,6 +2,8 @@ import { buildStore as buildIt, inferType, Prototype } from 'prodom'
 import './editor.css'
 import { devIcon } from './icons'
 import jsSHA from 'jssha'
+import keypair from 'keypair'
+import crypto from 'crypto'
 export interface EditorProps {
   demo: string
   title: string
@@ -11,7 +13,14 @@ export interface EditorProps {
 const Editor = (
   { demo, title, hash }: EditorProps,
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  { onDemoChange, setTitle, setHash, setHashFile }: EditorActions,
+  {
+    onDemoChange,
+    setTitle,
+    setHash,
+    setHashFile,
+    checkIntegrity,
+    createKeyPair,
+  }: EditorActions,
   demoProp: string,
   titleProp: string,
   link: string,
@@ -76,7 +85,7 @@ const Editor = (
   const demoContainerDOM: Prototype<HTMLDivElement> = {
     tag: 'div',
     className: ['demo-container', devMode && 'dev', dark && 'dark'],
-    children: [leftDemoDOM, rightDemoDOM],
+    children: [rightDemoDOM],
     contentEditable: devMode,
   }
   return {
@@ -86,11 +95,43 @@ const Editor = (
     contentEditable: devMode,
   }
 }
-// async function calculate_sha512_for_file(file: any, callback: any) {
-//   const reader = new FileReader()
+function arrayBufferToBase64(arrayBuffer) {
+  const byteArray = new Uint8Array(arrayBuffer)
+  let byteString = ''
+  for (let i = 0; i < byteArray.byteLength; i++) {
+    byteString += String.fromCharCode(byteArray[i])
+  }
+  const b64 = window.btoa(byteString)
 
-const calculate_sha512_for_file = function (file) {
+  return b64
+}
+
+function addNewLines(str) {
+  let finalString = ''
+  while (str.length > 0) {
+    finalString += str.substring(0, 64) + '\n'
+    str = str.substring(64)
+  }
+
+  return finalString
+}
+
+function toPemPrivate(privateKey) {
+  const b64 = addNewLines(arrayBufferToBase64(privateKey))
+  const pem =
+    '-----BEGIN PRIVATE KEY-----\n' + b64 + '-----END PRIVATE KEY-----'
+
+  return pem
+}
+function toPemPublic(publicKey) {
+  const b64 = addNewLines(arrayBufferToBase64(privateKey))
+  const pem = '-----BEGIN PUBLIC KEY-----\n' + b64 + '-----END PUBLIC KEY-----'
+
+  return pem
+}
+const calculate_sha512_for_file = function (file, mail, email = false) {
   const reader = new FileReader()
+
   return new Promise((resolve, reject) => {
     reader.onerror = function (e) {
       alert(e)
@@ -98,18 +139,108 @@ const calculate_sha512_for_file = function (file) {
     }
     reader.onload = function () {
       const shaObj = new jsSHA('SHA3-512', 'TEXT')
-      shaObj.update(reader.result)
+      if (email) {
+        const date = new Date()
+        shaObj.update(
+          mail + date.toString() + date.toISOString() + reader.result,
+        )
+      } else {
+        shaObj.update(reader.result)
+      }
       const hash = shaObj.getHash('HEX')
       resolve(hash)
     }
     reader.readAsBinaryString(file)
   })
 }
+
+const signAlgorithm = {
+  name: 'RSASSA-PKCS1-v1_5',
+  hash: {
+    name: 'SHA-512',
+  },
+  modulusLength: 4096,
+  extractable: false,
+  publicExponent: new Uint8Array([1, 0, 1]),
+}
+
+function textToArrayBuffer(str) {
+  const buf = unescape(encodeURIComponent(str))
+  const bufView = new Uint8Array(buf.length)
+  for (let i = 0; i < buf.length; i++) {
+    bufView[i] = buf.charCodeAt(i)
+  }
+  return bufView
+}
+function signData(key, data) {
+  return window.crypto.subtle.sign(signAlgorithm, key, textToArrayBuffer(data))
+}
+
+function testVerifySig(pub, sig, data) {
+  return window.crypto.subtle.verify(signAlgorithm, pub, sig, data)
+}
+
+function arrayBufferToBase64String(arrayBuffer) {
+  const byteArray = new Uint8Array(arrayBuffer)
+  let byteString = ''
+  for (let i = 0; i < byteArray.byteLength; i++) {
+    byteString += String.fromCharCode(byteArray[i])
+  }
+  return btoa(byteString)
+}
+
+function convertBinaryToPem(binaryData, label) {
+  const base64Cert = arrayBufferToBase64String(binaryData)
+  let pemCert = '-----BEGIN ' + label + '-----\n'
+  let nextIndex = 0
+  while (nextIndex < base64Cert.length) {
+    if (nextIndex + 64 <= base64Cert.length) {
+      pemCert += base64Cert.substr(nextIndex, 64)
+    } else {
+      pemCert += base64Cert.substr(nextIndex)
+    }
+    nextIndex += 64
+  }
+  pemCert += '-----END ' + label
+  return pemCert
+}
+
+function exportPublicKey(keys) {
+  return new Promise(function (resolve) {
+    window.crypto.subtle
+      .exportKey('spki', keys.publicKey)
+      .then(function (spki) {
+        resolve(convertBinaryToPem(spki, 'RSA PUBLIC KEY'))
+      })
+  })
+}
+
+function exportPrivateKey(keys) {
+  return new Promise(function (resolve) {
+    const expK = window.crypto.subtle.exportKey('pkcs8', keys.privateKey)
+    expK.then(function (pkcs8) {
+      resolve(convertBinaryToPem(pkcs8, 'RSA PRIVATE KEY'))
+    })
+  })
+}
+
+function exportPemKeys(keys) {
+  return new Promise(function (resolve) {
+    exportPublicKey(keys).then(function (pubKey) {
+      exportPrivateKey(keys).then(function (privKey) {
+        resolve({ publicKey: pubKey, privateKey: privKey })
+      })
+    })
+  })
+}
+
 type EditorActions = {
   onDemoChange: (demo: string) => void
   setTitle: (title: string) => void
   setHash: (str: string) => void
-  setHashFile: (file: any) => void
+  setHashFile: (file: any, mail: string) => void
+  checkIntegrity: (file: any, hash: string) => void
+  createKeyPair: () => void
 }
 const actions = (state: EditorProps): EditorActions => ({
   onDemoChange: (demo: string) => {
@@ -123,12 +254,66 @@ const actions = (state: EditorProps): EditorActions => ({
     sha512.update(str)
     state.title = 'y4e'
   },
-  setHashFile: async (file: any) => {
-    // set the state.hash to hash generated by the function
-
-    await calculate_sha512_for_file(file).then((hash) => {
+  setHashFile: async (file: any, mail: string) => {
+    await calculate_sha512_for_file(file, mail, true).then((hash) => {
       state.title = 'SHA3-512 for this file is: ' + (hash as string)
     })
+  },
+  checkIntegrity: async (file: any, hash: string) => {
+    await calculate_sha512_for_file(file, hash).then((result) => {
+      if (hash === (result as string)) {
+        console.log('file is ok')
+        state.title = 'File is ok '
+      } else {
+        console.log('file is not ok')
+        state.title = 'File is not ok '
+      }
+    })
+  },
+  createKeyPair: async () => {
+    // 4096 is the key size of the keypair
+    await window.crypto.subtle
+      .generateKey(
+        // {
+        //   name: 'RSA-OAEP',
+        //   modulusLength: 4096, // can be 1024, 2048 or 4096
+        //   publicExponent: new Uint8Array([0x01, 0x00, 0x01]),
+        //   hash: { name: 'SHA-512' }, // or SHA-512
+        // },
+        // true,
+        signAlgorithm,
+        true,
+        ['sign', 'verify'],
+      )
+      .then(function (keyPair) {
+        exportPemKeys(keyPair)
+          .then(function (keys) {
+            document.getElementById('key-pair-info').innerText =
+              JSON.stringify(keys.publicKey) +
+              '\n' +
+              JSON.stringify(keys.privateKey)
+            // save keys to local storage
+						localStorage.setItem('publicKey', JSON.stringify(keys.publicKey))
+						// console.log(localStorage.getItem('publicKey'));
+            localStorage.setItem('privateKey', JSON.stringify(keys.privateKey))
+
+            console.log(JSON.stringify(keys.publicKey))
+            // console.log(JSON.stringify(keys.privateKey))
+            signData(keyPair.privateKey, 'test').then((sig) => {
+              console.log(arrayBufferToBase64(sig))
+              testVerifySig(
+                keyPair.publicKey,
+                sig,
+                textToArrayBuffer('test'),
+              ).then((signedData) => {
+                console.log(signedData)
+              })
+            })
+          })
+          .catch(function (err) {
+            console.log(err)
+          })
+      })
   },
 })
 
