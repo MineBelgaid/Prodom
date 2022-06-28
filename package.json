@@ -9,7 +9,7 @@
     "scripts": {
         "heroku-prebuild": "npm install --dev",
         "start": "npm run build && webpack-serve --host=0.0.0.0 --port=$PORT --omit=dev",
-        "build": "webpack --env production",
+        "build": "webpack --mode production",
         "lint": "eslint . --ext .ts",
         "lint-and-fix": "eslint . --ext .ts --fix",
         "prettier-format": "prettier --config .prettierrc 'src/**/*.ts' --write",
