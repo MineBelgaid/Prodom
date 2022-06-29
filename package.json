@@ -16,7 +16,8 @@
         "prettier-format": "prettier --config .prettierrc 'src/**/*.ts' --write",
         "watch": "webpack --watch",
         "test": "jest",
-        "test-watch": "jest --watch"
+        "test-watch": "jest --watch",
+        "heroku-postbuild": "npm run build"
     },
     "keywords": [],
     "author": "",
