@@ -9,29 +9,27 @@ module.exports = function(env) {
         devtool: env.production ? 'source-map' : undefined,
         entry: './src/index.ts',
         devServer: {
-            contentBase: './dist',
-            disableHostCheck: true,
             // hot: true,
         },
-        plugins: [
-            new CleanWebpackPlugin({ cleanStaleWebpackAssets: false }),
-            new HtmlWebpackPlugin({
-                title: 'Prodom, the next open web app framework',
-                favicon: './src/icon-trans.png',
-            }),
-            new WebpackPwaManifest({
-                name: 'Prodom introduction',
-                short_name: 'Prodom',
-                description: 'A simple introduction into the Prodom framework',
-                background_color: '#ffffff',
-                fingerprints: false,
-                crossorigin: 'anonymous', //can be null, use-credentials or anonymous
-                icons: [{
-                    src: path.resolve('src/icon-trans.png'),
-                    sizes: [96, 128, 192, 256, 384, 512], // multiple sizes
-                }, ],
-            }),
-        ],
+        // plugins: [
+        //     new CleanWebpackPlugin({ cleanStaleWebpackAssets: false }),
+        //     new HtmlWebpackPlugin({
+        //         title: 'Prodom, the next open web app framework',
+        //         favicon: './src/icon-trans.png',
+        //     }),
+        //     new WebpackPwaManifest({
+        //         name: 'Prodom introduction',
+        //         short_name: 'Prodom',
+        //         description: 'A simple introduction into the Prodom framework',
+        //         background_color: '#ffffff',
+        //         fingerprints: false,
+        //         crossorigin: 'anonymous', //can be null, use-credentials or anonymous
+        //         icons: [{
+        //             src: path.resolve('src/icon-trans.png'),
+        //             sizes: [96, 128, 192, 256, 384, 512], // multiple sizes
+        //         }, ],
+        //     }),
+        // ],
         output: {
             publicPath: '',
             filename: '[name].[contenthash].js',
