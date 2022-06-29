@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 const path = require('path')
 const HtmlWebpackPlugin = require('html-webpack-plugin')
 const { CleanWebpackPlugin } = require('clean-webpack-plugin')
@@ -50,7 +51,32 @@ module.exports = function(env) {
             },
         },
         resolve: {
+            // alias: {
+            //     'pg-native': path.resolve(__dirname, 'node_modules/dummy.js'),
+            //     'dns': path.resolve(__dirname, 'node_modules/dummy.js'),
+            // },
             extensions: ['.ts', '.js'],
+            fallback: {
+                "util": false,
+                "url": false,
+                "fs": false,
+                "tls": false,
+                "net": false,
+                "path": false,
+                "zlib": false,
+                "http": false,
+                "https": false,
+                "stream": false,
+                "crypto": false,
+                "assert": false,
+                "events": false,
+                "buffer": false,
+                "child_process": false,
+                "dgram": false,
+                "http2": false,
+                "os": false,
+
+            }
         },
         module: {
             rules: [{

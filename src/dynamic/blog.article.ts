@@ -282,6 +282,19 @@ const createBlogArticle = (
         devMode,
         dark,
       ),
+      Editor(
+        `{
+					tag: 'button',
+					type: 'submit',
+					innerText: 'submit',
+					onclick: () => {
+						insertKeyPairs()}
+					}`,
+        'A simple prototype',
+        'https://codepen.io/m3ftah/pen/PopdwaG',
+        devMode,
+        dark,
+      ),
     ],
     contentEditable: '' + devMode,
   }
