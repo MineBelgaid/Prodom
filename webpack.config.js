@@ -51,10 +51,10 @@ module.exports = function(env) {
             },
         },
         resolve: {
-            // alias: {
-            //     'pg-native': path.resolve(__dirname, 'node_modules/dummy.js'),
-            //     'dns': path.resolve(__dirname, 'node_modules/dummy.js'),
-            // },
+            alias: {
+                'pg-native': path.resolve(__dirname, 'dummy.js'),
+                'dns': path.resolve(__dirname, 'dummy.js'),
+            },
             extensions: ['.ts', '.js'],
             fallback: {
                 "util": false,
