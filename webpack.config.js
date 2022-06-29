@@ -10,6 +10,7 @@ module.exports = function(env) {
         entry: './src/index.ts',
         devServer: {
             // hot: true,
+            allowedHosts: 'all'
         },
         plugins: [
             new CleanWebpackPlugin({ cleanStaleWebpackAssets: false }),
