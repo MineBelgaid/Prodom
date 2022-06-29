@@ -9,6 +9,7 @@
     "scripts": {
         "heroku-prebuild": "npm install --dev",
         "start": "npm run build && webpack serve  --port=$PORT",
+        "run": "webpack serve --host=0.0.0.0 --port=8080",
         "build": "webpack --mode production",
         "lint": "eslint . --ext .ts",
         "lint-and-fix": "eslint . --ext .ts --fix",
@@ -51,7 +52,8 @@
         "keypair": "^1.0.4",
         "npm": "^8.13.1",
         "pg": "^8.7.3",
-        "prodom": "^0.0.4"
+        "prodom": "^0.0.4",
+        "stream-browserify": "^3.0.0"
     },
     "browser": {
         "crypto": false
