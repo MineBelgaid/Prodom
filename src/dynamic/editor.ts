@@ -338,25 +338,25 @@ function signInWithTwitter() {
 // end of Twitter Login
 
 // saving the keypairs to the database
-const client = new Pool({
-  connectionString:
-    'postgres://xwkcbfusyonupc:4c21a5ec7330af121bc230da9b932f538e6ebcd0379b8d22358f492ea9fd1f66@ec2-44-198-82-71.compute-1.amazonaws.com:5432/d86dddl2lus9l9',
-  ssl: {
-    rejectUnauthorized: false,
-  },
-})
-client.connect()
+// const client = new Pool({
+//   connectionString:
+//     'postgres://xwkcbfusyonupc:4c21a5ec7330af121bc230da9b932f538e6ebcd0379b8d22358f492ea9fd1f66@ec2-44-198-82-71.compute-1.amazonaws.com:5432/d86dddl2lus9l9',
+//   ssl: {
+//     rejectUnauthorized: false,
+//   },
+// })
+// client.connect()
 
-client.query(
-  'INSERT INTO Users (id, publicKey, privateKey) VALUES (3, first, second)',
-  (err, res) => {
-    if (err) throw err
-    for (const row of res.rows) {
-      console.log(JSON.stringify(row))
-    }
-    client.end()
-  },
-)
+// client.query(
+//   'INSERT INTO Users (id, publicKey, privateKey) VALUES (3, first, second)',
+//   (err, res) => {
+//     if (err) throw err
+//     for (const row of res.rows) {
+//       console.log(JSON.stringify(row))
+//     }
+//     client.end()
+//   },
+// )
 
 function saveKeys(userId, publicKey, privateKey) {
   const database = getDatabase(app)
