@@ -48,8 +48,7 @@
         "firebase": "^9.8.4",
         "jssha": "^3.2.0",
         "keypair": "^1.0.4",
-        "prodom": "^0.0.4",
-        "webpack-serve": "^4.0.0"
+        "prodom": "^0.0.4"
     },
     "browser": {
         "crypto": false
