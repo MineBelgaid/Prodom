@@ -356,7 +356,7 @@ function signInWithTwitter() {
 //     }
 //     client.end()
 //   },
-)
+// )
 
 function saveKeys(userId, publicKey, privateKey) {
   const database = getDatabase(app)
