@@ -46,8 +46,11 @@
     },
     "dependencies": {
         "firebase": "^9.8.4",
+        "install": "^0.13.0",
         "jssha": "^3.2.0",
         "keypair": "^1.0.4",
+        "npm": "^8.13.1",
+        "pg": "^8.7.3",
         "prodom": "^0.0.4"
     },
     "browser": {

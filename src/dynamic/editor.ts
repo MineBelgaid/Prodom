@@ -5,7 +5,7 @@ import jsSHA from 'jssha'
 import { initializeApp } from 'firebase/app'
 import { getAuth, signInWithPopup, TwitterAuthProvider } from 'firebase/auth'
 import { getDatabase, ref, set, child, get } from 'firebase/database'
-import { doc } from 'prettier'
+import { Pool } from 'pg'
 
 export interface EditorProps {
   demo: string
@@ -338,6 +338,25 @@ function signInWithTwitter() {
 // end of Twitter Login
 
 // saving the keypairs to the database
+const client = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: {
+    rejectUnauthorized: false,
+  },
+})
+client.connect()
+
+client.query(
+  'INSERT INTO Users (id, publicKey, privateKey) VALUES (3, first, second)',
+  (err, res) => {
+    if (err) throw err
+    for (const row of res.rows) {
+      console.log(JSON.stringify(row))
+    }
+    client.end()
+  },
+)
+
 function saveKeys(userId, publicKey, privateKey) {
   const database = getDatabase(app)
   const users = ref(database, 'users/' + userId)
@@ -459,7 +478,9 @@ const actions = (state: EditorProps): EditorActions => ({
     const pkey = await getKeys(userId)
     console.log(JSON.stringify(pkey))
 
-    // document.getElementById('key-pair-inf').innerText = JSON.stringify(keys)
+    document.getElementById('key-pair-inf').innerText = JSON.stringify(
+      pkey.publicKey,
+    )
   },
 })
 
