@@ -11,6 +11,7 @@ module.exports = function(env) {
         entry: './src/index.ts',
         devServer: {
             // hot: true,
+            // contentBase: './dist',
             allowedHosts: 'all'
         },
         plugins: [
@@ -35,8 +36,10 @@ module.exports = function(env) {
         output: {
             publicPath: '',
             filename: '[name].[contenthash].js',
-            path: path.resolve(__dirname, 'dist'),
+            path: path.resolve('src'),
+
         },
+
         optimization: {
             moduleIds: 'deterministic',
             runtimeChunk: 'single',
@@ -51,32 +54,12 @@ module.exports = function(env) {
             },
         },
         resolve: {
+
             alias: {
                 'pg-native': path.resolve(__dirname, 'dummy.js'),
                 'dns': path.resolve(__dirname, 'dummy.js'),
             },
             extensions: ['.ts', '.js'],
-            fallback: {
-                "util": false,
-                "url": false,
-                "fs": false,
-                "tls": false,
-                "net": false,
-                "path": false,
-                "zlib": false,
-                "http": false,
-                "https": false,
-                "stream": false,
-                "crypto": false,
-                "assert": false,
-                "events": false,
-                "buffer": false,
-                "child_process": false,
-                "dgram": false,
-                "http2": false,
-                "os": false,
-
-            }
         },
         module: {
             rules: [{
