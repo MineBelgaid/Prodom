@@ -5,7 +5,6 @@ import jsSHA from 'jssha'
 import { initializeApp } from 'firebase/app'
 import { getAuth, signInWithPopup, TwitterAuthProvider } from 'firebase/auth'
 import { getDatabase, ref, set, child, get } from 'firebase/database'
-import { Client } from 'pg'
 
 export interface EditorProps {
   demo: string
