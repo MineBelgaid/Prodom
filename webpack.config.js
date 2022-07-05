@@ -33,12 +33,7 @@ module.exports = function(env) {
                 }, ],
             }),
         ],
-        output: {
-            publicPath: '',
-            filename: '[name].[contenthash].js',
-            path: path.resolve('src'),
 
-        },
 
         optimization: {
             moduleIds: 'deterministic',

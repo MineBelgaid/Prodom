@@ -439,7 +439,7 @@ const createBlogArticle = (
         devMode,
         dark,
 			),
-			Editor(
+			
     ],
     contentEditable: '' + devMode,
   }
