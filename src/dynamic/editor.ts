@@ -2,10 +2,11 @@ import { buildStore as buildIt, inferType, Prototype } from 'prodom'
 import './editor.css'
 import { devIcon } from './icons'
 import jsSHA from 'jssha'
+
 import { initializeApp } from 'firebase/app'
 import { getAuth, signInWithPopup, TwitterAuthProvider } from 'firebase/auth'
 import { getDatabase, ref, set, child, get } from 'firebase/database'
-
+import axios from 'axios'
 export interface EditorProps {
   demo: string
   title: string
@@ -109,41 +110,41 @@ const Editor = (
     contentEditable: devMode,
   }
 }
-function arrayBufferToBase64(arrayBuffer) {
-  const byteArray = new Uint8Array(arrayBuffer)
-  let byteString = ''
-  for (let i = 0; i < byteArray.byteLength; i++) {
-    byteString += String.fromCharCode(byteArray[i])
-  }
-  const b64 = window.btoa(byteString)
+// function arrayBufferToBase64(arrayBuffer) {
+//   const byteArray = new Uint8Array(arrayBuffer)
+//   let byteString = ''
+//   for (let i = 0; i < byteArray.byteLength; i++) {
+//     byteString += String.fromCharCode(byteArray[i])
+//   }
+//   const b64 = window.btoa(byteString)
 
-  return b64
-}
+//   return b64
+// }
 
-function addNewLines(str) {
-  let finalString = ''
-  while (str.length > 0) {
-    finalString += str.substring(0, 64) + '\n'
-    str = str.substring(64)
-  }
+// function addNewLines(str) {
+//   let finalString = ''
+//   while (str.length > 0) {
+//     finalString += str.substring(0, 64) + '\n'
+//     str = str.substring(64)
+//   }
 
-  return finalString
-}
+//   return finalString
+// }
 
-function toPemPrivate(privateKey) {
-  const b64 = addNewLines(arrayBufferToBase64(privateKey))
-  const pem =
-    '-----BEGIN PRIVATE KEY-----\n' + b64 + '-----END PRIVATE KEY-----'
+// function toPemPrivate(privateKey) {
+//   const b64 = addNewLines(arrayBufferToBase64(privateKey))
+//   const pem =
+//     '-----BEGIN PRIVATE KEY-----\n' + b64 + '-----END PRIVATE KEY-----'
 
-  return pem
-}
-function toPemPublic(publicKey) {
-  const b64 = addNewLines(arrayBufferToBase64(privateKey))
-  const pem = '-----BEGIN PUBLIC KEY-----\n' + b64 + '-----END PUBLIC KEY-----'
+//   return pem
+// }
+// function toPemPublic(publicKey) {
+//   const b64 = addNewLines(arrayBufferToBase64(privateKey))
+//   const pem = '-----BEGIN PUBLIC KEY-----\n' + b64 + '-----END PUBLIC KEY-----'
 
-  return pem
-}
-const calculate_sha512_for_file = function (file, mail, email = false) {
+//   return pem
+// }
+const calculate_sha512_for_file = function (file, mail = '', email = false) {
   const reader = new FileReader()
 
   return new Promise((resolve, reject) => {
@@ -167,6 +168,25 @@ const calculate_sha512_for_file = function (file, mail, email = false) {
     reader.readAsBinaryString(file)
   })
 }
+const calculate_sha512_for_text = function (
+  text: string,
+  mail = '',
+  email = false,
+) {
+  return new Promise((resolve, reject) => {
+    const shaObj = new jsSHA('SHA3-512', 'TEXT')
+    const date = new Date()
+    if (email) {
+      const date = new Date()
+      shaObj.update(mail + date.toString() + date.toISOString() + text)
+    } else {
+      shaObj.update(text)
+    }
+
+    const hash = shaObj.getHash('HEX')
+    resolve(hash)
+  })
+}
 
 // Crypto functions
 const signAlgorithm = {
@@ -179,181 +199,168 @@ const signAlgorithm = {
   publicExponent: new Uint8Array([1, 0, 1]),
 }
 
-function textToArrayBuffer(str) {
-  const buf = unescape(encodeURIComponent(str))
-  const bufView = new Uint8Array(buf.length)
-  for (let i = 0; i < buf.length; i++) {
-    bufView[i] = buf.charCodeAt(i)
-  }
-  return bufView
-}
-function signData(key, data) {
-  return window.crypto.subtle.sign(signAlgorithm, key, textToArrayBuffer(data))
-}
-
-function testVerifySig(pub, sig, data) {
-  return window.crypto.subtle.verify(signAlgorithm, pub, sig, data)
-}
-
-function base64StringToArrayBuffer(b64str) {
-  const byteStr = atob(b64str)
-  const bytes = new Uint8Array(byteStr.length)
-  for (let i = 0; i < byteStr.length; i++) {
-    bytes[i] = byteStr.charCodeAt(i)
-  }
-  return bytes.buffer
-}
-function arrayBufferToBase64String(arrayBuffer) {
-  const byteArray = new Uint8Array(arrayBuffer)
-  let byteString = ''
-  for (let i = 0; i < byteArray.byteLength; i++) {
-    byteString += String.fromCharCode(byteArray[i])
-  }
-  return btoa(byteString)
-}
-
-function convertBinaryToPem(binaryData, label) {
-  const base64Cert = arrayBufferToBase64String(binaryData)
-  let pemCert = '-----BEGIN ' + label + '-----\r\n'
-  let nextIndex = 0
-  let lineLength
-  while (nextIndex < base64Cert.length) {
-    if (nextIndex + 64 <= base64Cert.length) {
-      pemCert += base64Cert.substr(nextIndex, 64) + '\r\n'
-    } else {
-      pemCert += base64Cert.substr(nextIndex) + '\r\n'
-    }
-    nextIndex += 64
-  }
-  pemCert += '-----END ' + label + '-----\r\n'
-  return pemCert
-}
-function convertPemToBinary(pem) {
-  const lines = pem.split('\n')
-  let encoded = ''
-  for (let i = 0; i < lines.length; i++) {
-    if (
-      lines[i].trim().length > 0 &&
-      lines[i].indexOf('-BEGIN RSA PRIVATE KEY-') < 0 &&
-      lines[i].indexOf('-BEGIN RSA PUBLIC KEY-') < 0 &&
-      lines[i].indexOf('-END RSA PRIVATE KEY-') < 0 &&
-      lines[i].indexOf('-END RSA PUBLIC KEY-') < 0
-    ) {
-      encoded += lines[i].trim()
-    }
-  }
-  return base64StringToArrayBuffer(encoded)
-}
-
-function exportPublicKey(keys) {
-  return new Promise(function (resolve) {
-    window.crypto.subtle
-      .exportKey('spki', keys.publicKey)
-      .then(function (spki) {
-        resolve(convertBinaryToPem(spki, 'RSA PUBLIC KEY'))
-      })
-  })
-}
-
-function exportPrivateKey(keys) {
-  return new Promise(function (resolve) {
-    const expK = window.crypto.subtle.exportKey('pkcs8', keys.privateKey)
-    expK.then(function (pkcs8) {
-      resolve(convertBinaryToPem(pkcs8, 'RSA PRIVATE KEY'))
-    })
-  })
-}
-
-function exportPemKeys(keys) {
-  return new Promise(function (resolve) {
-    exportPublicKey(keys).then(function (pubKey) {
-      exportPrivateKey(keys).then(function (privKey) {
-        resolve({ publicKey: pubKey, privateKey: privKey })
-      })
-    })
-  })
-}
-function importPublicKey(pemKey) {
-  return new Promise(function (resolve) {
-    const importer = window.crypto.subtle.importKey(
-      'spki',
-      convertPemToBinary(pemKey),
-      signAlgorithm,
-      true,
-      ['verify'],
-    )
-    importer.then(function (key) {
-      resolve(key)
-    })
-  })
-}
-
-function importPrivateKey(pemKey) {
-  return new Promise(function (resolve) {
-    const importer = window.crypto.subtle.importKey(
-      'pkcs8',
-      convertPemToBinary(pemKey),
-      signAlgorithm,
-      true,
-      ['sign'],
-    )
-    importer.then(function (key) {
-      resolve(key)
-    })
-  })
-}
-// end of Crypto functions
-
 // Twitter Login
 const app = initializeApp(firebaseConfig)
 const auth = getAuth()
-function signInWithTwitter() {
-  const provider = new TwitterAuthProvider()
-  signInWithPopup(auth, provider)
-    .then(function (result) {
-      // This gives you a the Twitter OAuth 1.0 Access Token and Secret.
-      // You can use these serverside with your app's credentials to access the Twitter API.
-      const credential = TwitterAuthProvider.credentialFromResult(result)
-      const token = credential.accessToken
-      const secret = credential.secret
-
-      // The signed-in user info.
-      const user = result.user
-      console.log(user)
-      // ...
-    })
-    .catch(function (error) {
-      // Handle Errors here.
-      const errorCode = error.code
-      const errorMessage = error.message
-      // The email of the user's account used.
-      const email = error.email
-      // The firebase.auth.AuthCredential type that was used.
-      const credential = error.credential
-      // ...
-    })
-}
 
 // end of Twitter Login
+const config = {
+  headers: {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    'Access-Control-Allow-Credentials': true,
+  },
+}
+
+// const keys = response.data
+
+// console.log(keys)
+// const pubKey = importPublicKey(keys.publicKey)
+// const privKey = importPrivateKey(keys.privateKey)
+// pubKey.then(funcimport { signInWithPopup } from 'firebase/auth';
+// tion (key) {
+//   console.log(key)
+// })
+// privKey.then(function (key) {
+//   console.log(key)
+// })
 
 // saving the keypairs to the database
-const client = new Client({
-  connectionString:
-    'postgres://xwkcbfusyonupc:4c21a5ec7330af121bc230da9b932f538e6ebcd0379b8d22358f492ea9fd1f66@ec2-44-198-82-71.compute-1.amazonaws.com:5432/d86dddl2lus9l9',
-  ssl: {
-    rejectUnauthorized: false,
-  },
-})
-// client.connect()
+function twitterAuth() {
+  // window.open("http://localhost:8020/auth/twitter",'_self','location=yes,height=570,width=520,scrollbars=yes,status=yes');
+  window.open('http://localhost:8020/auth/twitter', '_self')
+}
+function signInWithTwitter() {
+  console.log('signInWithTwitter')
 
-function insertKeyPairs() {
-  return new Promise(function (resolve) {
-    console.log('inserting keypairs')
+  axios
+    .get('http://localhost:8020/', {
+      withCredentials: true,
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Credentials': true,
+      },
+    })
+    .then((response) => {
+      // get the user id which is under users and slug which is unknown
+      const user = response.data.user[Object.keys(response.data.user)[0]]
+      document.getElementById('twitter-id').innerHTML = 'user id : ' + user.id
+      document.getElementById('public-key').innerHTML = user.publicKey
 
-    client
-      .query(`INSERT INTO users (id, privatekey,publickey) VALUES (1,'1', '2')`)
-      .then(function (result) {
-        resolve(result)
+      // console.log(userId)
+      console.log()
+      const keys = response.data.id
+    })
+}
+async function SignFile(file) {
+  calculate_sha512_for_file(file).then(async function (hash) {
+    await axios
+      .post(
+        'http://localhost:8020/sign',
+        {
+          data: hash as string,
+        },
+        {
+          withCredentials: true,
+          headers: {
+            Accept: 'application/json',
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Credentials': true,
+          },
+        },
+      )
+      .then((response) => {
+        if (response.status === 200) {
+          document.getElementById('signedFile').innerHTML =
+            'signature : ' + response.data.signature
+        }
+      })
+  })
+}
+async function SignData(data) {
+  console.log('SignData')
+  calculate_sha512_for_text(data).then(async (hash) => {
+    await axios
+      .post(
+        'http://localhost:8020/sign',
+        {
+          data: hash as string,
+        },
+        {
+          withCredentials: true,
+          headers: {
+            Accept: 'application/json',
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Credentials': true,
+          },
+        },
+      )
+      .then((response) => {
+        if (response.status === 200) {
+          document.getElementById('signature').innerHTML =
+            'signature : ' + response.data.signature
+        }
+      })
+  })
+}
+async function VerifyData(data, signature) {
+  console.log('VerifyData')
+  calculate_sha512_for_text(data).then(async (hash) => {
+    await axios
+
+      .post(
+        'http://localhost:8020/verify',
+        {
+          data: hash as string,
+          signature: signature,
+        },
+        {
+          withCredentials: true,
+          headers: {
+            Accept: 'application/json',
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Credentials': true,
+          },
+        },
+      )
+
+      .then((response) => {
+        if (response.status === 200) {
+          document.getElementById('verify').innerHTML =
+            'verify : ' + response.data.verify
+        }
+      })
+  })
+}
+async function VerifyFile(File, signature, slug) {
+	console.log('VerifyFile')
+	console.log(slug);
+	
+  calculate_sha512_for_file(File).then(async (hash) => {
+    await axios
+      .post(
+        'http://localhost:8020/verify',
+        {
+          data: hash as string,
+          signature: signature,
+          slug: slug,
+        },
+        {
+          withCredentials: true,
+          headers: {
+            Accept: 'application/json',
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Credentials': true,
+          },
+        },
+      )
+
+      .then((response) => {
+        if (response.status === 200) {
+          document.getElementById('verifiedFile').innerHTML =
+            'verify : ' + response.data.verify
+        }
       })
   })
 }
@@ -478,7 +485,6 @@ const actions = (state: EditorProps): EditorActions => ({
   getKey: async (userId: string) => {
     const pkey = await getKeys(userId)
     console.log(JSON.stringify(pkey))
-
     document.getElementById('key-pair-inf').innerText = JSON.stringify(
       pkey.publicKey,
     )
@@ -486,3 +492,121 @@ const actions = (state: EditorProps): EditorActions => ({
 })
 
 export default buildIt(Editor, actions)
+// function textToArrayBuffer(str) {
+//   const buf = unescape(encodeURIComponent(str))
+//   const bufView = new Uint8Array(buf.length)
+//   for (let i = 0; i < buf.length; i++) {
+//     bufView[i] = buf.charCodeAt(i)
+//   }
+//   return bufView
+// }
+
+// function base64StringToArrayBuffer(b64str) {
+//   const byteStr = atob(b64str)
+//   const bytes = new Uint8Array(byteStr.length)
+//   for (let i = 0; i < byteStr.length; i++) {
+//     bytes[i] = byteStr.charCodeAt(i)
+//   }
+//   return bytes.buffer
+// }
+// function arrayBufferToBase64String(arrayBuffer) {
+//   const byteArray = new Uint8Array(arrayBuffer)
+//   let byteString = ''
+//   for (let i = 0; i < byteArray.byteLength; i++) {
+//     byteString += String.fromCharCode(byteArray[i])
+//   }
+//   return btoa(byteString)
+// }
+
+// function convertBinaryToPem(binaryData, label) {
+//   const base64Cert = arrayBufferToBase64String(binaryData)
+//   let pemCert = '-----BEGIN ' + label + '-----\r\n'
+//   let nextIndex = 0
+//   let lineLength
+//   while (nextIndex < base64Cert.length) {
+//     if (nextIndex + 64 <= base64Cert.length) {
+//       pemCert += base64Cert.substr(nextIndex, 64) + '\r\n'
+//     } else {
+//       pemCert += base64Cert.substr(nextIndex) + '\r\n'
+//     }
+//     nextIndex += 64
+//   }
+//   pemCert += '-----END ' + label + '-----\r\n'
+//   return pemCert
+// }
+// function convertPemToBinary(pem) {
+//   const lines = pem.split('\n')
+//   let encoded = ''
+//   for (let i = 0; i < lines.length; i++) {
+//     if (
+//       lines[i].trim().length > 0 &&
+//       lines[i].indexOf('-BEGIN RSA PRIVATE KEY-') < 0 &&
+//       lines[i].indexOf('-BEGIN RSA PUBLIC KEY-') < 0 &&
+//       lines[i].indexOf('-END RSA PRIVATE KEY-') < 0 &&
+//       lines[i].indexOf('-END RSA PUBLIC KEY-') < 0
+//     ) {
+//       encoded += lines[i].trim()
+//     }
+//   }
+//   return base64StringToArrayBuffer(encoded)
+// }
+
+// function exportPublicKey(keys) {
+//   return new Promise(function (resolve) {
+//     window.crypto.subtle
+//       .exportKey('spki', keys.publicKey)
+//       .then(function (spki) {
+//         resolve(convertBinaryToPem(spki, 'RSA PUBLIC KEY'))
+//       })
+//   })
+// }
+
+// function exportPrivateKey(keys) {
+//   return new Promise(function (resolve) {
+//     const expK = window.crypto.subtle.exportKey('pkcs8', keys.privateKey)
+//     expK.then(function (pkcs8) {
+//       resolve(convertBinaryToPem(pkcs8, 'RSA PRIVATE KEY'))
+//     })
+//   })
+// }
+
+// function exportPemKeys(keys) {
+//   return new Promise(function (resolve) {
+//     exportPublicKey(keys).then(function (pubKey) {
+//       exportPrivateKey(keys).then(function (privKey) {
+//         resolve({ publicKey: pubKey, privateKey: privKey })
+//       })
+//     })
+//   })
+// }
+// function importPublicKey(pemKey) {
+//   return new Promise(function (resolve) {
+//     const importer = window.crypto.subtle.importKey(
+//       'spki',
+//       convertPemToBinary(pemKey),
+//       signAlgorithm,
+//       true,
+//       ['verify'],
+//     )
+//     importer.then(function (key) {
+//       resolve(key)
+//     })
+//   })
+// }
+
+// function importPrivateKey(pemKey) {
+//   return new Promise(function (resolve) {
+//     const importer = window.crypto.subtle.importKey(
+//       'pkcs8',
+//       convertPemToBinary(pemKey),
+//       signAlgorithm,
+//       true,
+//       ['sign'],
+//     )
+//     importer.then(function (key) {
+//     import value from './../import-png';
+// resolve(key)
+//     })
+//   })
+// }
+// end of Crypto functions

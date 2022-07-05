@@ -94,13 +94,13 @@ const createBlogArticle = (
     children: [
       Editor(
         `{
-  	tag: 'input',
-	type: 'file',
-	onchange: (e) => {
-		const file = e.target.files[0]
-		setHashFile(file)
-	}
-}`,
+        	tag: 'input',
+      	type: 'file',
+      	onchange: (e) => {
+      		const file = e.target.files[0]
+      		SignFile(file)
+      	}
+      }`,
         'A simple prototype',
         'https://codepen.io/m3ftah/pen/PopdwaG',
         devMode,
@@ -108,176 +108,255 @@ const createBlogArticle = (
       ),
       Editor(
         `{
-  tag: 'div',
-  className: ['form'],
-  children:
-  [
-    {
-      tag: 'input',
-      id: ['email-input'],
-      type: 'email',
-      value: 'Email',
-    },
-    {
-      tag:"br",
-    },
-    {
-      tag: 'input',
-      type: 'file',
-      className: ['fileinput'],
-      id: 'file1',
-    },
-    {
-      tag:"br",
-    },
-    {
-      tag: 'button',
-      type: 'submit',
-      innerText: 'submit',
-      onclick: () => {
-        const fileInput = document.getElementById('file1');
-        const selectedFile = fileInput.files[0];
-				const emailinput = document.getElementById('email-input');
-				const email = emailinput.value;
-        setHashFile(selectedFile,email)
-      }
-    },
-  ]
-}`,
-        'Adding the preamble',
-        'https://codepen.io/m3ftah/pen/PopdwaG',
-        devMode,
-        dark,
-      ),
-      Editor(
-        `{
-  tag: 'div',
-  className: ['form'],
-  children:
-  [
-    {
-      tag: 'input',
-      id: ['hash-input'],
-      type: 'text',
-      value: 'Enter your hash',
-    },
-    {
-      tag:"br",
-    },
-    {
-      tag: 'input',
-      type: 'file',
-      className: ['fileinput'],
-      id: 'file2',
-    },
-    {
-      tag:"br",
-    },
-    {
-      tag: 'button',
-      type: 'submit',
-      innerText: 'submit',
-      onclick: () => {
-        const fileInput = document.getElementById('file2');
-        const selectedFile = fileInput.files[0];
-        const hashinput = document.getElementById('hash-input');
-        const hash = hashinput.value;
-        checkIntegrity(selectedFile,hash)
-      }
-    },
-  ]
-}`,
-        'Checking integrity',
-        'https://codepen.io/m3ftah/pen/PopdwaG',
-        devMode,
-        dark,
-      ),
-      Editor(
-        `{
-					tag: 'div',
-					children:[
-						{
-  	tag: 'button'	,
-	type: 'submit',
-	innerText: 'submit',
-	onclick: () => {
-		createKeyPair()
-	},},
-	{
-		tag: 'p',
-		id: ['key-pair-info'],
-	}
-]
-}`,
-        'create Key Pair',
-        'https://codepen.io/m3ftah/pen/PopdwaG',
-        devMode,
-        dark,
-      ),
-      Editor(
-        `{
-					tag: 'div',
-					children:[
-						{
-  	tag: 'button'	,
-	type: 'submit',
-	innerText: 'submit',
-	onclick: () => {
-		document.getElementById('key-pair-infoo').innerText = localStorage.getItem('publicKey')+localStorage.getItem('privateKey')
-		console.log(localStorage.getItem('publicKey'))
-	},},
-	{
-		tag: 'p',
-		id: ['key-pair-infoo'],
-	}
-]
-}`,
-        'A simple prototype',
-        'https://codepen.io/m3ftah/pen/PopdwaG',
-        devMode,
-        dark,
-      ),
-      Editor(
-        `{
-					tag: 'div',
-					children:[
-						{
-							tag:'input',
-							id: ['id-input'],
-							type: 'text',
-							value: '55',
-						},
-						{
-  	tag: 'button'	,
-	type: 'submit',
-	innerText: 'submit',
-	onclick: () => {
-		const idinput = document.getElementById('id-input');
-		const id = idinput.value;
-		getKey(id)
+        tag: 'div',
+        className: ['form'],
+        children:
+        [
+          {
+            tag: 'input',
+            id: ['email-input'],
+            type: 'email',
+            value: 'Email',
+          },
+          {
+            tag:"br",
+          },
+          {
+            tag: 'input',
+            type: 'file',
+            className: ['fileinput'],
+            id: 'file',
+          },
+          {
+            tag:"br",
+          },
+          {
+            tag: 'button',
+            type: 'submit',
+            innerText: 'Sign',
+            onclick: () => {
+              const fileInput = document.getElementById('file');
+              const selectedFile = fileInput.files[0];
+      				const emailinput = document.getElementById('email-input');
+      				const email = emailinput.value;
+              SignFile(selectedFile)
+            }
+          },
+					{
+						tag: 'p',
+						innerText: 'Signing...',
+						id: 'signedFile',
 
-	},},
-	{
-		tag: 'p',
-		id: ['key-pair-inf'],
-	}
-]
-}`,
-        'A simple prototype',
+					},
+        ]
+      }`,
+        'Sign a File',
         'https://codepen.io/m3ftah/pen/PopdwaG',
         devMode,
         dark,
       ),
+      Editor(
+        `{
+        tag: 'div',
+        className: ['form'],
+        children:
+        [
+          {
+            tag: 'input',
+            id: ['signature-input'],
+            type: 'text',
+            value: ' hRW9ZrG0qJVcQSXcbfNlOxtGVk5ZbN0XooHV8bunA+DRuMmWjlGh1NAtFph3UdLCh7vwmZ5lxkU73KhGbVn9ck2zK28rtGH6etlB/ZS2S+NfODUFRcj5pBQLsA+GQIb/ZzEV/n5K2YB6t8DhH0iJfwKXnHhMtkIMo7Ha7+5zkHwibWLOU4w9PJVup0TiYD7evQMpCyjMYRpU7vlMZWSUF47jxKR8y7llPlcCji2/T5zCvGEq/VzIdBLI07ors0uLWbRVTzwmGiryfFEmqqjOtWglw5ajvEHus2vWDsOaKip6aTliKwSizgA09pznjWdEXKfezvh0gqSvd0sC7E44h1YMFQ/K3dgCkyyzApEq3EiavtC1Q+CtZk6DaeU8cUNGX2lnifcJIwRLuwiSewn5H9VDRPWcVhnTf67IQ89TKF6wlG2Ev2yDIY3JbqRMU4R7ZAf8zNSPAaVu+r6N5KjPmPm/LgeWLyMmROqExL5LMFW/4WmRoS6lTVSA4ea6ZI660inK/bJM41HPXdo4xp2L8yOUaYJvDje3YVmTdFpwnrDUlllROOoVA4vr2XweDrdipLdIM+PMHzPt/WnAUCa9Tfqq6YNLP2U7n/1+wYqGXEuWLz+Q1LXsAhjnbuSbNlSzF/e41iTaCtLWBrGkkQDKTpbVHZZOfN6ifyBIHJ0bITU=',
+          },
+          {
+            tag: 'input',
+            id: ['slug-input'],
+            type: 'text',
+            value: 'iy0xjr317vd0jyoxbcbcjz',
+          },
+          {
+            tag:"br",
+          },
+          {
+            tag: 'input',
+            type: 'file',
+            className: ['fileinput'],
+            id: 'file',
+          },
+          {
+            tag:"br",
+          },
+          {
+            tag: 'button',
+            type: 'submit',
+            innerText: 'submit',
+            onclick: () => {
+              const fileInput = document.getElementById('file');
+              const selectedFile = fileInput.files[0];
+      				const signature = document.getElementById('signature-input').value;
+							const slug = document.getElementById('slug-input').value;
+      				
+              VerifyFile(selectedFile,signature,slug);
+            }
+          },
+					{
+						tag: 'p',
+						innerText: 'Verifying...',
+						id: 'verifiedFile',
+
+					},
+        ]
+      }`,
+        'Sign a File',
+        'https://codepen.io/m3ftah/pen/PopdwaG',
+        devMode,
+        dark,
+      ),
+      //       Editor(
+      //         `{
+      //   tag: 'div',
+      //   className: ['form'],
+      //   children:
+      //   [
+      //     {
+      //       tag: 'input',
+      //       id: ['hash-input'],
+      //       type: 'text',
+      //       value: 'Enter your hash',
+      //     },
+      //     {
+      //       tag:"br",
+      //     },
+      //     {
+      //       tag: 'input',
+      //       type: 'file',
+      //       className: ['fileinput'],
+      //       id: 'file2',
+      //     },
+      //     {
+      //       tag:"br",
+      //     },
+      //     {
+      //       tag: 'button',
+      //       type: 'submit',
+      //       innerText: 'submit',
+      //       onclick: () => {
+      //         const fileInput = document.getElementById('file2');
+      //         const selectedFile = fileInput.files[0];
+      //         const hashinput = document.getElementById('hash-input');
+      //         const hash = hashinput.value;
+      //         checkIntegrity(selectedFile,hash)
+      //       }
+      //     },
+      //   ]
+      // }`,
+      //         'Checking integrity',
+      //         'https://codepen.io/m3ftah/pen/PopdwaG',
+      //         devMode,
+      //         dark,
+      //       ),
+      //       Editor(
+      //         `{
+      // 					tag: 'div',
+      // 					children:[
+      // 						{
+      //   	tag: 'button'	,
+      // 	type: 'submit',
+      // 	innerText: 'submit',
+      // 	onclick: () => {
+      // 		createKeyPair()
+      // 	},},
+      // 	{
+      // 		tag: 'p',
+      // 		id: ['key-pair-info'],
+      // 	}
+      // ]
+      // }`,
+      //         'create Key Pair',
+      //         'https://codepen.io/m3ftah/pen/PopdwaG',
+      //         devMode,
+      //         dark,
+      //       ),
+      //       Editor(
+      //         `{
+      // 					tag: 'div',
+      // 					children:[
+      // 						{
+      //   	tag: 'button'	,
+      // 	type: 'submit',
+      // 	innerText: 'submit',
+      // 	onclick: () => {
+      // 		document.getElementById('key-pair-infoo').innerText = localStorage.getItem('publicKey')+localStorage.getItem('privateKey')
+      // 		console.log(localStorage.getItem('publicKey'))
+      // 	},},
+      // 	{
+      // 		tag: 'p',
+      // 		id: ['key-pair-infoo'],
+      // 	}
+      // ]
+      // }`,
+      //         'A simple prototype',
+      //         'https://codepen.io/m3ftah/pen/PopdwaG',
+      //         devMode,
+      //         dark,
+      //       ),
+      //       Editor(
+      //         `{
+      // 					tag: 'div',
+      // 					children:[
+      // 						{
+      // 							tag:'input',
+      // 							id: ['id-input'],
+      // 							type: 'text',
+      // 							value: '55',
+      // 						},
+      // 						{
+      //   	tag: 'button'	,
+      // 	type: 'submit',
+      // 	innerText: 'submit',
+      // 	onclick: () => {
+      // 		const idinput = document.getElementById('id-input');
+      // 		const id = idinput.value;
+      // 		getKey(id)
+
+      // 	},},
+      // 	{
+      // 		tag: 'p',
+      // 		id: ['key-pair-inf'],
+      // 	}
+      // ]
+      // }`,
+      //         'A simple prototype',
+      //         'https://codepen.io/m3ftah/pen/PopdwaG',
+      //         devMode,
+      //         dark,
+      //       ),
       // sign in using twitter
       Editor(
         `{
+					tag: 'div',
+					children:[
+{
 					tag: 'button',
 					type: 'submit',
 					innerText: 'submit',
 					onclick: () => {
 						signInWithTwitter()}
+					},
+					{
+						tag: 'br',
+					},
+					{
+						tag: 'h4',
+						id: ['twitter-id'],
+					},
+					{
+						tag: 'p',
+						id: ['public-key'],
+					},
+
+					]
 					}`,
-        'A simple prototype',
+        'display public key and twitter ID',
         'https://codepen.io/m3ftah/pen/PopdwaG',
         devMode,
         dark,
@@ -288,13 +367,79 @@ const createBlogArticle = (
 					type: 'submit',
 					innerText: 'submit',
 					onclick: () => {
-						insertKeyPairs()}
+						twitterAuth()}
 					}`,
-        'A simple prototype',
+        'Twitter Authentication',
         'https://codepen.io/m3ftah/pen/PopdwaG',
         devMode,
         dark,
       ),
+      Editor(
+        `{
+					tag:'div',
+					children:[
+						{
+							tag:'input',
+							id: ['data-input'],
+							value: 'amine',
+						},
+						{
+					tag: 'button',
+					type: 'submit',
+					innerText: 'submit',
+					onclick: () => {
+						const datainput = document.getElementById('data-input').value;
+						SignData(datainput);
+					},},
+					{
+						tag: 'p',
+						id: ['signature'],
+						
+					},
+				]
+					}`,
+        'Sign Data',
+        'https://codepen.io/m3ftah/pen/PopdwaG',
+        devMode,
+        dark,
+      ),
+      Editor(
+        `{
+					tag:'div',
+					children:[
+						{
+							tag:'input',
+							id: ['data-input2'],
+							value: 'amine',
+						},
+						{
+							tag:'input',
+							id: ['data-input3'],
+							value: '',
+						},
+						{
+					tag: 'button',
+					type: 'submit',
+					innerText: 'submit',
+					onclick: () => {
+						const datainput = document.getElementById('data-input2').value;
+						const datainput3 = document.getElementById('data-input3').value;
+						VerifyData(datainput,datainput3);
+					},},
+					{
+						tag: 'p',
+						id: ['verify'],
+
+					},
+					
+				]
+					}`,
+        'Verify Signature',
+        'https://codepen.io/m3ftah/pen/PopdwaG',
+        devMode,
+        dark,
+			),
+			Editor(
     ],
     contentEditable: '' + devMode,
   }
