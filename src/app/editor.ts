@@ -6,7 +6,11 @@ import jsSHA from 'jssha'
 import { initializeApp } from 'firebase/app'
 import { getAuth, signInWithPopup, TwitterAuthProvider } from 'firebase/auth'
 import { getDatabase, ref, set, child, get } from 'firebase/database'
+import client from '../client/client'
 import axios from 'axios'
+function replaceClient() {
+  document.body.replaceWith(client)
+}
 export interface EditorProps {
   demo: string
   title: string
@@ -244,7 +248,7 @@ function signInWithTwitter() {
     })
     .then((response) => {
       // get the user id which is under users and slug which is unknown
-      const user = response.data.user[Object.keys(response.data.user)[0]]
+      const user = response.data.user
       document.getElementById('twitter-id').innerHTML = 'user id : ' + user.id
       document.getElementById('public-key').innerHTML = user.publicKey
 
@@ -260,6 +264,7 @@ async function SignFile(file) {
         'http://localhost:8020/sign',
         {
           data: hash as string,
+          costume: false,
         },
         {
           withCredentials: true,
@@ -333,29 +338,18 @@ async function VerifyData(data, signature) {
       })
   })
 }
+
 async function VerifyFile(File, signature, slug) {
-	console.log('VerifyFile')
-	console.log(slug);
-	
+  console.log('VerifyFile')
+  console.log(slug)
+
   calculate_sha512_for_file(File).then(async (hash) => {
     await axios
-      .post(
-        'http://localhost:8020/verify',
-        {
-          data: hash as string,
-          signature: signature,
-          slug: slug,
-        },
-        {
-          withCredentials: true,
-          headers: {
-            Accept: 'application/json',
-            'Content-Type': 'application/json',
-            'Access-Control-Allow-Credentials': true,
-          },
-        },
-      )
-
+      .post('http://localhost:8020/verify', {
+        data: hash as string,
+        signature: signature,
+        slug: slug,
+      })
       .then((response) => {
         if (response.status === 200) {
           document.getElementById('verifiedFile').innerHTML =
@@ -365,38 +359,95 @@ async function VerifyFile(File, signature, slug) {
   })
 }
 
-function saveKeys(userId, publicKey, privateKey) {
-  const database = getDatabase(app)
-  const users = ref(database, 'users/' + userId)
-  set(users, {
-    publicKey: publicKey,
-    privateKey: privateKey,
-  })
-}
-function getKeys(userId) {
-  const dbRef = ref(getDatabase(app))
-  const result = get(child(dbRef, `users/${userId}`))
-    .then(function (snapshot) {
-      if (snapshot.exists()) {
-        const privateKey = snapshot.val().privateKey
-        const publicKey = snapshot.val().publicKey
-        convertPemToBinary(publicKey)
-        document.getElementById('key-pair-inf').innerText = JSON.stringify(
-          convertBinaryToPem(publicKey, 'RSA PUBLIC KEY'),
-        )
+async function saveKeyPair(publicKey, privateKey) {
+  // get slug from current page url query
+  const slug = window.location.search.split('=')[1]
+  console.log(slug)
 
-        console.log(publicKey)
-
-        return snapshot.val()
-      } else {
-        return 'No Data Available'
+  await axios
+    .post(
+      'http://localhost:8020/auth/costumeKeypair',
+      {
+        publicKey: publicKey,
+        privateKey: privateKey,
+        slug: slug,
+      },
+      {
+        withCredentials: true,
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Credentials': true,
+        },
+      },
+    )
+    .then((response) => {
+      if (response.status === 200) {
+        console.log('succesfuly changed')
       }
     })
-    .catch(function (error) {
-      console.log(error)
-      return 'No Data Available'
+}
+async function savePublicKey(publicKey) {
+  console.log('savePublicKey')
+  // get slug from current page url query
+  const slug = window.location.search.split('=')[1]
+  console.log(slug)
+
+  await axios
+    .post(
+      'http://localhost:8020/auth/costumeKey',
+      {
+        publicKey: publicKey,
+        slug: slug,
+      },
+      {
+        withCredentials: true,
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Credentials': true,
+        },
+      },
+    )
+    .then((response) => {
+      if (response.status === 200) {
+        console.log('succesfuly changed')
+      }
     })
 }
+
+// function saveKeys(userId, publicKey, privateKey) {
+//   const database = getDatabase(app)
+//   const users = ref(database, 'users/' + userId)
+//   set(users, {
+//     publicKey: publicKey,
+//     privateKey: privateKey,
+//   })
+// }
+// function getKeys(userId) {
+//   const dbRef = ref(getDatabase(app))
+//   const result = get(child(dbRef, `users/${userId}`))
+//     .then(function (snapshot) {
+//       if (snapshot.exists()) {
+//         const privateKey = snapshot.val().privateKey
+//         const publicKey = snapshot.val().publicKey
+//         convertPemToBinary(publicKey)
+//         document.getElementById('key-pair-inf').innerText = JSON.stringify(
+//           convertBinaryToPem(publicKey, 'RSA PUBLIC KEY'),
+//         )
+
+//         console.log(publicKey)
+
+//         return snapshot.val()
+//       } else {
+//         return 'No Data Available'
+//       }
+//     })
+//     .catch(function (error) {
+//       console.log(error)
+//       return 'No Data Available'
+//     })
+// }
 // end of saving the keypairs to the database
 
 type EditorActions = {
@@ -406,7 +457,7 @@ type EditorActions = {
   setHashFile: (file: any, mail: string) => void
   checkIntegrity: (file: any, hash: string) => void
   createKeyPair: () => void
-  getKey: (userId: string) => void
+  // getKey: (userId: string) => void
 }
 const actions = (state: EditorProps): EditorActions => ({
   onDemoChange: (demo: string) => {
@@ -481,13 +532,6 @@ const actions = (state: EditorProps): EditorActions => ({
             console.log(err)
           })
       })
-  },
-  getKey: async (userId: string) => {
-    const pkey = await getKeys(userId)
-    console.log(JSON.stringify(pkey))
-    document.getElementById('key-pair-inf').innerText = JSON.stringify(
-      pkey.publicKey,
-    )
   },
 })
 

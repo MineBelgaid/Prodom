@@ -20,6 +20,7 @@ module.exports = function(env) {
                 title: 'Prodom, the next open web app framework',
                 favicon: './src/icon-trans.png',
             }),
+
             new WebpackPwaManifest({
                 name: 'Prodom introduction',
                 short_name: 'Prodom',
