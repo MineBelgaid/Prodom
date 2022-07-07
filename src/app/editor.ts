@@ -415,7 +415,28 @@ async function savePublicKey(publicKey) {
       }
     })
 }
-
+async function generateKey() {
+  await axios
+    .post(
+      'http://localhost:8020/auth/generate',
+      {
+        publicKey: 'hi',
+      },
+      {
+        withCredentials: true,
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Credentials': true,
+        },
+      },
+    )
+    .then((response) => {
+      if (response.status === 200) {
+        console.log('succesfuly changed')
+      }
+    })
+}
 // function saveKeys(userId, publicKey, privateKey) {
 //   const database = getDatabase(app)
 //   const users = ref(database, 'users/' + userId)

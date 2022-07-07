@@ -138,6 +138,9 @@ const createBlogArticle = (
 						if (handle === 'client') {
 							replaceClient();
 						}
+						else{
+							generateKey();
+						}
 							
 					},},
 					{
